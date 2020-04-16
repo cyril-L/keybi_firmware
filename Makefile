@@ -7,6 +7,9 @@ DEPS=gcc-arm-none-eabi
 
 .PHONY: firmware flash-versaloon clean release
 
+.PHONY: all
+all: firmware
+
 firmware:
 	cd $(BUILD_DIR) && \
 	make && \
