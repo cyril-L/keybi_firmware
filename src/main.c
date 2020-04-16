@@ -35,7 +35,8 @@
 #include "string.h"
 #include "CcidLocalAccess.h"
 #include "HandleAesStorageKey.h"
-
+#include "my_keyboard.h"
+#include "my_trackball.h"
 
 int nGlobalStickState = STICK_STATE_SMARTCARD;
 
@@ -107,6 +108,8 @@ int main(void) {
 
   SysTick_Config(720000);    // set systemtick to 10 ms - for delay ()
 
+  MyKeyboardSetup();
+  MyTrackballSetup();
 
   /* Setup before USB startup */
 
@@ -119,6 +122,10 @@ int main(void) {
 
   /* Endless loop after USB startup */
   while (1) {
+
+	  MyKeyboardLoop();
+	  // MyTrackballRead();
+
     if (device_status == STATUS_RECEIVED_REPORT) {
       device_status = STATUS_BUSY;
       parse_report(HID_SetReport_Value_tmp, HID_GetReport_Value_tmp);
