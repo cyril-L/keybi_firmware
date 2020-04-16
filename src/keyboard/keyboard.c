@@ -32,6 +32,7 @@
 uint8_t keyboardBuffer[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 __IO uint8_t PrevXferComplete = 1;
+__IO uint8_t PrevKbdXferComplete = 1;
 
 void sendChar (uint8_t chr)
 {
@@ -78,21 +79,27 @@ void sendKeys (uint8_t * buffer)
 {
     if (bDeviceState == CONFIGURED)
     {
-        while (!PrevXferComplete);
+//        while (!PrevXferComplete);
+//
+//        SetEPTxAddr(ENDP4, ENDP4_TXADDR);
+//        PrevXferComplete = 0;
+//        /* Use the memory interface function to write to the selected endpoint */
+//        UserToPMABufferCopy (buffer, ENDP4_TXADDR, 8);
+//        /* Update the data length in the control register */
+//        SetEPTxCount (ENDP4, 8);
+//        SetEPTxStatus (ENDP4, EP_TX_VALID);
 
-        PrevXferComplete = 0;
+        while (!PrevKbdXferComplete);
+
+        SetEPTxAddr(ENDP5, ENDP4_TXADDR);
+        PrevKbdXferComplete = 0;
         /* Use the memory interface function to write to the selected endpoint */
         UserToPMABufferCopy (buffer, ENDP4_TXADDR, 8);
-
         /* Update the data length in the control register */
-        SetEPTxCount (ENDP4, 8);
-        SetEPTxStatus (ENDP4, EP_TX_VALID);
-
+        SetEPTxCount(ENDP5, 8);
+        SetEPTxStatus(ENDP5, EP_TX_VALID);
     }
-
 }
-
-
 
 void sendNumber (uint32_t number)
 {

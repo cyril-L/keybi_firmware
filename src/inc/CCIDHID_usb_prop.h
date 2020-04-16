@@ -104,7 +104,11 @@ uint8_t* Keyboard_GetProtocolValue (uint16_t Length);
 
 uint8_t* Keyboard_GetReportDescriptor (uint16_t Length);
 
+uint8_t* MyKeyboard_GetReportDescriptor (uint16_t Length);
+
 uint8_t* Keyboard_GetHIDDescriptor (uint16_t Length);
+
+uint8_t* MyKeyboard_GetHIDDescriptor (uint16_t Length);
 
 uint8_t* Keyboard_GetReport_Feature (uint16_t Length);
 

@@ -113,9 +113,19 @@ ONE_DESCRIPTOR Keyboard_Report_Descriptor = {
     KEYBOARD_SIZ_REPORT_DESC
 };
 
+ONE_DESCRIPTOR MyKeyboard_Report_Descriptor = {
+    (uint8_t *) MyKeyboard_ReportDescriptor,
+    MY_KEYBOARD_SIZ_REPORT_DESC
+};
+
 ONE_DESCRIPTOR Keyboard_Hid_Descriptor = {
     (uint8_t *) CCID_ConfigDescriptor + KEYBOARD_OFF_HID_DESC,
     KEYBOARD_SIZ_HID_DESC
+};
+
+ONE_DESCRIPTOR MyKeyboard_Hid_Descriptor = {
+    (uint8_t *) CCID_ConfigDescriptor + MY_KEYBOARD_OFF_HID_DESC,
+	KEYBOARD_SIZ_HID_DESC
 };
 
 ONE_DESCRIPTOR CCID_String_Descriptor[5] = {
@@ -215,6 +225,12 @@ void USB_CCID_Reset (void)
     SetEPRxStatus (ENDP4, EP_RX_DIS);
     SetEPTxStatus (ENDP4, EP_TX_NAK);
 
+    /* Initialize Endpoint 5 */
+    SetEPType (ENDP5, EP_INTERRUPT);
+    SetEPTxAddr (ENDP5, ENDP4_TXADDR);
+    SetEPRxStatus (ENDP5, EP_RX_DIS);
+    SetEPTxStatus (ENDP5, EP_TX_NAK);
+
     /* */
     SetEPRxCount (ENDP0, Device_Property->MaxPacketSize);
     SetEPRxValid (ENDP0);
@@ -248,6 +264,7 @@ void USB_CCID_Storage_SetConfiguration (void)
         ClearDTOG_RX (ENDP2);
         ClearDTOG_TX (ENDP2);
         ClearDTOG_TX (ENDP4);
+        ClearDTOG_TX (ENDP5);
         Bot_State = BOT_IDLE;   /* set the Bot state machine to the IDLE state */
     }
 }
@@ -387,17 +404,24 @@ RESULT USB_CCID_Data_Setup (uint8_t RequestNo)
 uint8_t* (*CopyRoutine) (uint16_t);
 
     CopyRoutine = NULL;
-    if ((RequestNo == GET_DESCRIPTOR) && (Type_Recipient == (STANDARD_REQUEST | INTERFACE_RECIPIENT)) && (pInformation->USBwIndex0 == 0))
+    if ((RequestNo == GET_DESCRIPTOR) && (Type_Recipient == (STANDARD_REQUEST | INTERFACE_RECIPIENT)))
 
     {
-
         if (pInformation->USBwValue1 == REPORT_DESCRIPTOR)
         {
-            CopyRoutine = Keyboard_GetReportDescriptor;
+        	if (pInformation->USBwIndex0 == 0) {
+        		CopyRoutine = Keyboard_GetReportDescriptor;
+        	} else if (pInformation->USBwIndex0 == 2) {
+        		CopyRoutine = MyKeyboard_GetReportDescriptor;
+        	}
         }
         else if (pInformation->USBwValue1 == HID_DESCRIPTOR_TYPE)
         {
-            CopyRoutine = Keyboard_GetHIDDescriptor;
+        	if (pInformation->USBwIndex0 == 0) {
+        		CopyRoutine = Keyboard_GetHIDDescriptor;
+        	} else if (pInformation->USBwIndex0 == 2) {
+        		CopyRoutine = MyKeyboard_GetHIDDescriptor;
+        	}
         }
 
     }   /* End of GET_DESCRIPTOR */
@@ -612,6 +636,11 @@ uint8_t* Keyboard_GetReportDescriptor (uint16_t Length)
     return Standard_GetDescriptorData (Length, &Keyboard_Report_Descriptor);
 }
 
+uint8_t* MyKeyboard_GetReportDescriptor (uint16_t Length)
+{
+    return Standard_GetDescriptorData (Length, &MyKeyboard_Report_Descriptor);
+}
+
 /*******************************************************************************
 * Function Name  : Keyboard_GetHIDDescriptor.
 * Description    : Gets the HID descriptor.
@@ -624,7 +653,10 @@ uint8_t* Keyboard_GetHIDDescriptor (uint16_t Length)
     return Standard_GetDescriptorData (Length, &Keyboard_Hid_Descriptor);
 }
 
-
+uint8_t* MyKeyboard_GetHIDDescriptor (uint16_t Length)
+{
+    return Standard_GetDescriptorData (Length, &MyKeyboard_Hid_Descriptor);
+}
 
 
 

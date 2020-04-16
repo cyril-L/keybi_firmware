@@ -50,7 +50,6 @@ const uint8_t CCID_DeviceDescriptor[CCID_SIZ_DEVICE_DESC] = {
 
 /*****************************************************************************/
 
-#define USB_CONFIG_BUS_POWERED                 0x80
 #define USB_CONFIG_REMOTE_WAKEUP               0x20
 
 const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC] = {
@@ -177,8 +176,38 @@ const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC] = {
     0x02,       // bmAttributes      Transfer type (bulk)
     0x40, 0x00, // wMaxPacketSize    Maximum packet size (64 bytes)
     0x00,       // bInterval         Polling interval (ignored)
-};
 
+    // Interface 2 descriptor (HID Keyboard)
+
+    0x09,   // bLength               Descriptor size (9 bytes)
+    0x04,   // bDescriptorType       Descriptor type (interface)
+    0x02,   // bInterfaceNumber      Interface Number
+    0x00,   // bAlternateSetting     Alternate Setting Number (none)
+    0x01,   // bNumEndpoints         Number of endpoints
+    0x03,   // bInterfaceClass       Interface class (HID)
+    0x01,   // bInterfaceSubClass    Interface subclass (boot)
+    0x01,   // nInterfaceProtocol    Interface protocol (keyboard)
+    0x00,   // iInterface            Interface string index (none)
+
+    // Keyboard HID class descriptor
+
+    0x09,       // bLength           Descriptor size (9 bytes)
+    0x21,       // bDescriptorType   Descriptor type (HID)
+    0x10, 0x01, // bcdHID            HID release number (1.1)
+    0x00,       // bCountryCode      Hardware target country (not supported)
+    0x01,       // bNumDescriptors   Number class descriptors
+    0x22,       // bDescriptorType   Class descriptor type (report)
+    WBVAL (MY_KEYBOARD_SIZ_REPORT_DESC),
+                // wItemLength       Report descriptor size
+
+    // Endpoint 5 descriptor
+    0x07,       // bLength           Descriptor size (7 bytes)
+    0x05,       // bDescriptorType   Descriptor type (endpoint)
+    0x85,       // bEndpointAddress  Endpoint 5 IN
+    0x03,       // bmAttributes      Transfer type (interrupt)
+    0x08, 0x00, // wMaxPacketSize    Maximum packet size (8 bytes)
+    0x0A        // bInterval         Polling interval
+};
 
 const uint8_t Keyboard_ReportDescriptor[KEYBOARD_SIZ_REPORT_DESC] = {
     0x06, 0x00, 0xff,    // USAGE_PAGE (Vendor-Defined)
@@ -205,6 +234,60 @@ const uint8_t Keyboard_ReportDescriptor[KEYBOARD_SIZ_REPORT_DESC] = {
         0xB1, 0x02,         //   FEATURE (Data,Var,Abs) */
 
     0xc0,               // END_COLLECTION
+};
+
+const uint8_t MyKeyboard_ReportDescriptor[MY_KEYBOARD_SIZ_REPORT_DESC] = {
+    0x05, 0x01, // USAGE_PAGE (Generic Desktop)
+    0x09, 0x06, // USAGE (Keyboard)
+
+    0xa1, 0x01, // COLLECTION (Application)
+    // 0x85, 0x01, // REPORT_ID (1)
+
+    // Modifier byte
+    0x05, 0x07, // USAGE_PAGE (Keyboard)
+    0x19, 0xe0, // USAGE_MINIMUM (Keyboard LeftControl)
+    0x29, 0xe7, // USAGE_MAXIMUM (Keyboard Right GUI)
+    0x15, 0x00, // LOGICAL_MINIMUM (0)
+    0x25, 0x01, // LOGICAL_MAXIMUM (1)
+    0x75, 0x01, // REPORT_SIZE (1)
+    0x95, 0x08, // REPORT_COUNT (8)
+    0x81, 0x02, // INPUT (Data,Var,Abs)
+
+    // Reserved byte
+    0x95, 0x01, // REPORT_COUNT (1)
+    0x75, 0x08, // REPORT_SIZE (8)
+    0x81, 0x03, // INPUT (Cnst,Var,Abs) (0x81, 0x01 constant in HID class definition example)
+
+    // LED report
+    0x95, 0x05, // REPORT_COUNT (5)
+    0x75, 0x01, // REPORT_SIZE (1)
+    0x05, 0x08, // USAGE_PAGE (LEDs)
+    0x19, 0x01, // USAGE_MINIMUM (Num Lock)
+    0x29, 0x05, // USAGE_MAXIMUM (Kana)
+    0x91, 0x02, // OUTPUT (Data,Var,Abs)
+
+    // LED report padding
+    0x95, 0x01, // REPORT_COUNT (1)
+    0x75, 0x03, // REPORT_SIZE (3)
+    0x91, 0x03, // OUTPUT (Cnst,Var,Abs)
+
+    // Key arrays (6 bytes)
+    0x95, 0x06, // REPORT_COUNT (6)
+    0x75, 0x08, // REPORT_SIZE (8)
+    0x15, 0x00, // LOGICAL_MINIMUM (0)
+    0x25, 0x65, // LOGICAL_MAXIMUM (101)
+    0x05, 0x07, // USAGE_PAGE (Key codes)
+    0x19, 0x00, // USAGE_MINIMUM (Reserved (no event indicated))
+    0x29, 0x65, // USAGE_MAXIMUM (Keyboard Application)
+    0x81, 0x00, // INPUT (Data,Ary,Abs)
+
+    // Not in HID class definition example
+    0x09, 0x03, // USAGE (Keyboard ErrorUndefine)
+    0x75, 0x08, // REPORT_SIZE (8)
+    0x95, KEYBOARD_FEATURE_COUNT,   // REPORT_COUNT (64)
+    0xB1, 0x02, // FEATURE (Data,Var,Abs)
+
+    0xc0   // END_COLLECTION
 };
 
 /*****************************************************************************/

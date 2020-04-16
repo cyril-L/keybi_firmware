@@ -32,6 +32,7 @@
 /* Private macro ------------------------------------------------------------- */
 /* Private variables --------------------------------------------------------- */
 extern __IO uint8_t PrevXferComplete;
+extern __IO uint8_t PrevKbdXferComplete;
 
 /* Private function prototypes ----------------------------------------------- */
 /* Private functions --------------------------------------------------------- */
@@ -45,7 +46,7 @@ extern __IO uint8_t PrevXferComplete;
 *******************************************************************************/
 void EP1_IN_Callback (void)
 {
-
+	// TODO Is this endpoint used?
     // PrevXferComplete = 1;
 
 
@@ -83,5 +84,12 @@ void EP4_IN_Callback (void)
 {
     /* Set the transfer complete token to inform upper layer that the current transfer has been complete */
     PrevXferComplete = 1;
+    // SwitchSmartcardLED(DISABLE);
+}
+
+void EP5_IN_Callback (void)
+{
+    /* Set the transfer complete token to inform upper layer that the current transfer has been complete */
+	PrevKbdXferComplete = 1;
     // SwitchSmartcardLED(DISABLE);
 }

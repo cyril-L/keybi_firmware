@@ -30,7 +30,7 @@
 /* Exported macro ------------------------------------------------------------ */
 /* Exported define ----------------------------------------------------------- */
 #define CCID_SIZ_DEVICE_DESC              18
-#define CCID_SIZ_CONFIG_DESC              (1*0x09 + 2*0x09+ 1*0x07+ 0x09 + 0x36+3*0x07)
+#define CCID_SIZ_CONFIG_DESC              (1*0x09 + 2*0x09+ 1*0x07+ 0x09 + 0x36+3*0x07 + 25)
 
 #define CCID_SIZ_STRING_LANGID            4
 #define CCID_SIZ_STRING_VENDOR            (38+14)
@@ -41,9 +41,12 @@
 #define HID_DESCRIPTOR_TYPE                     0x21
 
 #define KEYBOARD_SIZ_HID_DESC                   0x09
-#define KEYBOARD_OFF_HID_DESC                   0x12
 
+#define KEYBOARD_OFF_HID_DESC                   0x12
 #define KEYBOARD_SIZ_REPORT_DESC                (42)
+
+#define MY_KEYBOARD_OFF_HID_DESC                121
+#define MY_KEYBOARD_SIZ_REPORT_DESC             (71)
 
 #define KEYBOARD_FEATURE_COUNT                64
 
@@ -53,6 +56,8 @@ extern const uint8_t CCID_DeviceDescriptor[CCID_SIZ_DEVICE_DESC];
 extern const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC];
 
 extern const uint8_t Keyboard_ReportDescriptor[KEYBOARD_SIZ_REPORT_DESC];
+
+extern const uint8_t MyKeyboard_ReportDescriptor[MY_KEYBOARD_SIZ_REPORT_DESC];
 
 extern const uint8_t CCID_StringLangID[CCID_SIZ_STRING_LANGID];
 
