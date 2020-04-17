@@ -65,15 +65,21 @@ void SOF_Callback (void);
 void ESOF_Callback (void);
 #endif
 
+#ifndef EP1_IN_Callback
 void EP1_IN_Callback (void);
+#endif
 
+#ifndef EP2_IN_Callback
 void EP2_IN_Callback (void);
+#endif
 
 #ifndef EP3_IN_Callback
 void EP3_IN_Callback (void);
 #endif
 
+#ifndef EP4_IN_Callback
 void EP4_IN_Callback (void);
+#endif
 
 #ifndef EP5_IN_Callback
 void EP5_IN_Callback (void);
