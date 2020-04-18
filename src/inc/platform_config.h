@@ -43,7 +43,7 @@
 	activate the 4 Bit DMA SD card interface
 
 ******************************************************************************/
-#define USB_4BIT_SD_CARD_INTERFACE  // only RC CPU !!!!
+//#define USB_4BIT_SD_CARD_INTERFACE  // only RC CPU !!!!
 
 
 /* Define the STM32F10x hardware depending on the used evaluation board */
