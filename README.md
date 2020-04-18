@@ -1,8 +1,10 @@
-# SKB Keyboard firmware, security key included
+# [WIP] SKB Keyboard firmware, security key included
 
 This project aims to add a minimal keyboard and mouse interfaces to the original [Nitrokey Pro] firmware.
 
 [Nitrokey Pro]: https://github.com/Nitrokey/nitrokey-pro-firmware
+
+![WIP keyboard firmware](http://cyril.lugan.fr/assets/stash/2020-04-skb-banner.jpg)
 
 # Overview
 
