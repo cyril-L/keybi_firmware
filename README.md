@@ -1,6 +1,6 @@
-# [WIP] SKB Keyboard firmware, security key included
+# [WIP] Keybi, keyboard and security key firmware
 
-This project aims to add a minimal keyboard and mouse interfaces to the original [Nitrokey Pro] firmware.
+Adds a minimal keyboard and mouse interfaces to the original [Nitrokey Pro] firmware.
 
 [Nitrokey Pro]: https://github.com/Nitrokey/nitrokey-pro-firmware
 
