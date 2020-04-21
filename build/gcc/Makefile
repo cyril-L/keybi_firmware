@@ -133,6 +133,10 @@ SRC = 		../../src/main.c                                         \
 			../../src/pwd-safe/HandleAesStorageKey.c	\
 			../../src/pwd-safe/password_safe.c	\
 
+# Keybi source files
+SRC += ../../src/keybi/usb.c \
+       ../../src/keybi/keyboard.c
+
 			
 # List C source files here which must be compiled in ARM-Mode.
 # use file-extension c for "c-only"-files
@@ -191,6 +195,8 @@ EXTRAINCDIRS = ../../src/inc                                             \
 			   ../../src/stm/Libraries/STM32_USB-FS-Device_Driver/inc    \
 			   ../../src/stm/Libraries/STM32F10x_StdPeriph_Driver/inc
 
+# Keybi inc dir (allows to include keybi/header.h)
+EXTRAINCDIRS += ../../src
 
 # List any extra directories to look for library files here.
 #     Each directory must be seperated by a space.

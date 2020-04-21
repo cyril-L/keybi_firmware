@@ -25,7 +25,8 @@
 #include "usb_istr.h"
 
 #include "platform_config.h"
-#include "CCID_usb.h"
+#include "CCIDHID_usb.h"
+#include "keybi/usb.h"
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
@@ -98,4 +99,9 @@ void EP4_IN_Callback (void)
     /* Set the transfer complete token to inform upper layer that the current transfer has been complete */
     PrevXferComplete = 1;
     // SwitchSmartcardLED(DISABLE);
+}
+
+void EP5_IN_Callback (void)
+{
+    Keybi_Keyboard_SendReportCompleted();
 }
