@@ -1,6 +1,6 @@
 # [WIP] Keybi, keyboard and security key firmware
 
-Adds a minimal keyboard and mouse interfaces to the original [Nitrokey Pro] firmware.
+A minimal keyboard and mouse interface added to the original [Nitrokey Pro] firmware.
 
 [Nitrokey Pro]: https://github.com/Nitrokey/nitrokey-pro-firmware
 
