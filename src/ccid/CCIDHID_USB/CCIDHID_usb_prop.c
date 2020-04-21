@@ -215,6 +215,12 @@ void USB_CCID_Reset (void)
     SetEPRxStatus (ENDP4, EP_RX_DIS);
     SetEPTxStatus (ENDP4, EP_TX_NAK);
 
+    /* Initialize Endpoint 5 */
+    SetEPType (ENDP5, EP_INTERRUPT);
+    SetEPTxAddr (ENDP5, CCID_ENDP5_TXADDR);
+    SetEPRxStatus (ENDP5, EP_RX_DIS);
+    SetEPTxStatus (ENDP5, EP_TX_NAK);
+
     /* */
     SetEPRxCount (ENDP0, Device_Property->MaxPacketSize);
     SetEPRxValid (ENDP0);
@@ -249,6 +255,7 @@ void USB_CCID_Storage_SetConfiguration (void)
         ClearDTOG_TX (ENDP2);
         // ClearDTOG_TX(ENDP3);
         ClearDTOG_TX (ENDP4);
+        ClearDTOG_TX (ENDP5);
         Bot_State = BOT_IDLE;   /* set the Bot state machine to the IDLE state */
     }
 }
@@ -388,17 +395,25 @@ RESULT USB_CCID_Data_Setup (uint8_t RequestNo)
 uint8_t* (*CopyRoutine) (uint16_t);
 
     CopyRoutine = NULL;
-    if ((RequestNo == GET_DESCRIPTOR) && (Type_Recipient == (STANDARD_REQUEST | INTERFACE_RECIPIENT)) && (pInformation->USBwIndex0 == 0))
+    if ((RequestNo == GET_DESCRIPTOR) && (Type_Recipient == (STANDARD_REQUEST | INTERFACE_RECIPIENT)))
 
     {
 
         if (pInformation->USBwValue1 == REPORT_DESCRIPTOR)
         {
-            CopyRoutine = Keyboard_GetReportDescriptor;
+            if (pInformation->USBwIndex0 == 0) {
+                CopyRoutine = Keyboard_GetReportDescriptor;
+            } else if (pInformation->USBwIndex0 == 2) {
+                CopyRoutine = Keybi_Keyboard_GetReportDescriptor;
+            }
         }
         else if (pInformation->USBwValue1 == HID_DESCRIPTOR_TYPE)
         {
-            CopyRoutine = Keyboard_GetHIDDescriptor;
+            if (pInformation->USBwIndex0 == 0) {
+                CopyRoutine = Keyboard_GetHIDDescriptor;
+            } else if (pInformation->USBwIndex0 == 2) {
+                CopyRoutine = Keybi_Keyboard_GetHIDDescriptor;
+            }
         }
 
     }   /* End of GET_DESCRIPTOR */

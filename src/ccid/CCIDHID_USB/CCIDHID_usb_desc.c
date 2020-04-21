@@ -183,7 +183,36 @@ const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC] = {
     0x00,   // wMaxPacketSize (MSB)
     0x00,   // bInterval: ignored
 
+    // Interface 2 descriptor (HID Keyboard)
 
+    0x09,   // bLength               Descriptor size (9 bytes)
+    0x04,   // bDescriptorType       Descriptor type (interface)
+    0x02,   // bInterfaceNumber      Interface Number
+    0x00,   // bAlternateSetting     Alternate Setting Number (none)
+    0x01,   // bNumEndpoints         Number of endpoints
+    0x03,   // bInterfaceClass       Interface class (HID)
+    0x01,   // bInterfaceSubClass    Interface subclass (boot)
+    0x01,   // nInterfaceProtocol    Interface protocol (keyboard)
+    0x00,   // iInterface            Interface string index (none)
+
+    // Keyboard HID class descriptor
+
+    0x09,       // bLength           Descriptor size (9 bytes)
+    0x21,       // bDescriptorType   Descriptor type (HID)
+    0x10, 0x01, // bcdHID            HID release number (1.1)
+    0x00,       // bCountryCode      Hardware target country (not supported)
+    0x01,       // bNumDescriptors   Number class descriptors
+    0x22,       // bDescriptorType   Class descriptor type (report)
+    WBVAL (KEYBI_KEYBOARD_SIZ_REPORT_DESC),
+                // wItemLength       Report descriptor size
+
+    // Endpoint 5 descriptor
+    0x07,       // bLength           Descriptor size (7 bytes)
+    0x05,       // bDescriptorType   Descriptor type (endpoint)
+    0x85,       // bEndpointAddress  Endpoint 5 IN
+    0x03,       // bmAttributes      Transfer type (interrupt)
+    0x08, 0x00, // wMaxPacketSize    Maximum packet size (8 bytes)
+    0x0A        // bInterval         Polling interval
 };
 
 
