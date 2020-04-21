@@ -36,6 +36,8 @@
 #include "CcidLocalAccess.h"
 #include "HandleAesStorageKey.h"
 
+#include "keybi/keyboard.h"
+
 
 int nGlobalStickState = STICK_STATE_SMARTCARD;
 
@@ -117,6 +119,8 @@ int main(void) {
 
   StartupCheck_u8();
 
+  Keybi_Keyboard_Init();
+
   /* Endless loop after USB startup */
   while (1) {
     if (device_status == STATUS_RECEIVED_REPORT) {
@@ -149,6 +153,7 @@ int main(void) {
       nFlagSendSMCardInserted = FALSE;
     }
 
+    Keybi_Keyboard_MainLoop();
   }
 }
 
