@@ -1,13 +1,14 @@
 // Started from the JACK Enterprises Arduino example
 // https://github.com/mrjohnk/PMW3360DM-T2QU/blob/master/Arduino%20Examples/PMW3360DM-polling/
+//
+// TODO It has quickly been converted to STM32 without extensive checks
+// TODO Use the motion interrupt input
+// TODO store firmware in some dedicated memory?
 
-/*
- * This example bypasses the hardware motion interrupt pin
- * and polls the motion data registers at a fixed interval
- */
+#include "keybi/drivers/pmw3360.h"
 
-#include <SPI.h>
-#include <avr/pgmspace.h>
+#include "stm32f10x_spi.h"
+#include "stm32f10x_systick.h"
 
 // Registers
 #define Product_ID  0x00
@@ -60,64 +61,134 @@
 #define Raw_Data_Burst  0x64
 #define LiftCutoff_Tune2  0x65
 
-//Set this to what pin your "INT0" hardware interrupt feature is on
-#define Motion_Interrupt_Pin 9
+typedef uint8_t byte;
 
-const int ncs = 10;  //This is the SPI "slave select" pin that the sensor is hooked up to
+int init_complete = 0;
 
-byte initComplete=0;
-volatile int xydat[2];
-volatile byte movementflag=0;
-byte testctr=0;
-unsigned long currTime;
-unsigned long timer;
-unsigned long pollTimer;
+static const unsigned char firmware_data[4094];
 
-//Be sure to add the SROM file into this sketch via "Sketch->Add File"
-extern const unsigned short firmware_length;
-extern const unsigned char firmware_data[];
+static void performStartup(void);
+static void delayMicroseconds(uint32_t delay_us);
+static byte adns_read_reg(byte reg_addr);
+static void adns_write_reg(byte reg_addr, byte data);
 
-void setup() {
-  Serial.begin(9600);
+int Keybi_Pmw3360_Init() {
 
-  pinMode (ncs, OUTPUT);
+    GPIO_InitTypeDef GPIO_InitStructure;
 
-  pinMode(Motion_Interrupt_Pin, INPUT);
-  digitalWrite(Motion_Interrupt_Pin, HIGH);
-  attachInterrupt(9, UpdatePointer, FALLING);
+    RCC_APB2PeriphClockCmd(KEYBI_PMW3360_MT_PERIPH, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = KEYBI_PMW3360_MT_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(KEYBI_PMW3360_MT_PIN_PORT, &GPIO_InitStructure);
 
-  SPI.begin();
-  SPI.setDataMode(SPI_MODE3);
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setClockDivider(SPI_CLOCK_DIV128);
-  //SPI.setClockDivider(4);
+    RCC_APB2PeriphClockCmd(KEYBI_PMW3360_SS_PERIPH, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = KEYBI_PMW3360_SS_PIN;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(KEYBI_PMW3360_SS_PIN_PORT, &GPIO_InitStructure);
 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-  performStartup();
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+    SPI_InitTypeDef SPI_InitStructure;
+    SPI_StructInit (&SPI_InitStructure);
 
-  delay(5000);
+    SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+    SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+    SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+    SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;
+    SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+    SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256;
+    //SPI_InitStructure.SPI_CRCPolynomial = 7; // TODO check was this should be
+    SPI_Init(SPI2, &SPI_InitStructure);
 
-  dispRegisters();
-  initComplete=9;
+    SPI_Cmd(SPI2 , ENABLE);
 
+    performStartup();
+
+    delayMicroseconds(1000 * 1000); // 1s (TODO was 5s but 1s is still too long I guess)
+
+    uint8_t product_id = adns_read_reg(Product_ID);
+    uint8_t inverse_product_id = adns_read_reg(Inverse_Product_ID);
+
+    if ((product_id & 0xff) == ((~inverse_product_id) & 0xff)) {
+        init_complete = 1;
+    }
+    return init_complete;
 }
 
-void adns_com_begin(){
-  digitalWrite(ncs, LOW);
+void Keybi_Pmw3360_Read(keybi_pmw3360_motion_t * motion) {
+    if (init_complete) {
+        //write 0x01 to Motion register and read from it to freeze
+        // the motion values and make them available.
+        adns_write_reg(Motion, 0x01);
+        adns_read_reg(Motion);
+        motion->dx = (int8_t) adns_read_reg(Delta_X_L);
+        motion->dy = (int8_t) adns_read_reg(Delta_Y_L);
+    } else {
+        motion->dx = 0;
+        motion->dy = 0;
+    }
 }
 
-void adns_com_end(){
-  digitalWrite(ncs, HIGH);
+static void delayMicroseconds(uint32_t delay_us)
+{
+    uint32_t remaining_ticks = delay_us * 72;
+
+    uint32_t prev = SysTick_GetCounter();
+
+  while (1)
+  {
+      uint32_t curr = SysTick_GetCounter();
+      uint32_t elapsed;
+      if (curr > prev) {
+          elapsed = prev; // FIXME don’t know initial value
+      } else {
+          elapsed = prev - curr;
+      }
+      if (elapsed > remaining_ticks) {
+          break;
+      }
+      remaining_ticks -= elapsed;
+      prev = curr;
+  }
 }
 
-byte adns_read_reg(byte reg_addr){
+static uint8_t Keybi_Pmw3360_SpiTransfer(uint8_t data);
+
+static uint8_t Keybi_Pmw3360_SpiTransfer(uint8_t data) {
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_TXE) == RESET);
+    SPI_I2S_SendData(SPI2, data);
+
+    while (SPI_I2S_GetFlagStatus(SPI2, SPI_I2S_FLAG_RXNE) == RESET);
+    return SPI_I2S_ReceiveData(SPI2);
+}
+
+static void adns_com_begin(void);
+
+static void adns_com_begin(){
+    GPIO_ResetBits(KEYBI_PMW3360_SS_PIN_PORT,  KEYBI_PMW3360_SS_PIN);
+}
+
+static void adns_com_end(void);
+
+static void adns_com_end(){
+    GPIO_SetBits(KEYBI_PMW3360_SS_PIN_PORT,  KEYBI_PMW3360_SS_PIN);
+}
+
+static byte adns_read_reg(byte reg_addr){
   adns_com_begin();
 
   // send adress of the register, with MSBit = 0 to indicate it's a read
-  SPI.transfer(reg_addr & 0x7f );
+  Keybi_Pmw3360_SpiTransfer(reg_addr & 0x7f );
   delayMicroseconds(100); // tSRAD
   // read data
-  byte data = SPI.transfer(0);
+  byte data = Keybi_Pmw3360_SpiTransfer(0);
 
   delayMicroseconds(1); // tSCLK-NCS for read operation is 120ns
   adns_com_end();
@@ -126,22 +197,23 @@ byte adns_read_reg(byte reg_addr){
   return data;
 }
 
-void adns_write_reg(byte reg_addr, byte data){
+static void adns_write_reg(byte reg_addr, byte data){
   adns_com_begin();
 
   //send adress of the register, with MSBit = 1 to indicate it's a write
-  SPI.transfer(reg_addr | 0x80 );
+  Keybi_Pmw3360_SpiTransfer(reg_addr | 0x80 );
   //sent data
-  SPI.transfer(data);
+  Keybi_Pmw3360_SpiTransfer(data);
 
   delayMicroseconds(20); // tSCLK-NCS for write operation
   adns_com_end();
   delayMicroseconds(100); // tSWW/tSWR (=120us) minus tSCLK-NCS. Could be shortened, but is looks like a safe lower bound 
 }
 
-void adns_upload_firmware(){
+static void adns_upload_firmware(void);
+
+static void adns_upload_firmware(){
   // send the firmware to the chip, cf p.18 of the datasheet
-  Serial.println("Uploading firmware...");
 
   //Write 0 to Rest_En bit of Config2 register to disable Rest mode.
   adns_write_reg(Config2, 0x20);
@@ -150,21 +222,19 @@ void adns_upload_firmware(){
   adns_write_reg(SROM_Enable, 0x1d); 
 
   // wait for more than one frame period
-  delay(10); // assume that the frame rate is as low as 100fps... even if it should never be that low
+  delayMicroseconds(10 * 1000); // assume that the frame rate is as low as 100fps... even if it should never be that low
 
   // write 0x18 to SROM_enable to start SROM download
   adns_write_reg(SROM_Enable, 0x18); 
 
   // write the SROM file (=firmware data) 
   adns_com_begin();
-  SPI.transfer(SROM_Load_Burst | 0x80); // write burst destination adress
+  Keybi_Pmw3360_SpiTransfer(SROM_Load_Burst | 0x80); // write burst destination adress
   delayMicroseconds(15);
 
   // send all bytes of the firmware
-  unsigned char c;
-  for(int i = 0; i < firmware_length; i++){ 
-    c = (unsigned char)pgm_read_byte(firmware_data + i);
-    SPI.transfer(c);
+  for(int i = 0; i < sizeof(firmware_data); i++){
+    Keybi_Pmw3360_SpiTransfer(firmware_data[i]);
     delayMicroseconds(15);
   }
 
@@ -178,15 +248,15 @@ void adns_upload_firmware(){
   adns_write_reg(Config1, 0x15);
 
   adns_com_end();
-  }
+}
 
 
-void performStartup(void){
+static void performStartup(void){
   adns_com_end(); // ensure that the serial port is reset
   adns_com_begin(); // ensure that the serial port is reset
   adns_com_end(); // ensure that the serial port is reset
   adns_write_reg(Power_Up_Reset, 0x5a); // force reset
-  delay(50); // wait for it to reboot
+  delayMicroseconds(50 * 1000); // wait for it to reboot
   // read registers 0x02 to 0x06 (and discard the data)
   adns_read_reg(Motion);
   adns_read_reg(Delta_X_L);
@@ -195,86 +265,10 @@ void performStartup(void){
   adns_read_reg(Delta_Y_H);
   // upload the firmware
   adns_upload_firmware();
-  delay(10);
-  Serial.println("Optical Chip Initialized");
-  }
-
-void UpdatePointer(void){
-  if(initComplete==9){
-
-    //write 0x01 to Motion register and read from it to freeze the motion values and make them available
-    adns_write_reg(Motion, 0x01);
-    adns_read_reg(Motion);
-
-    xydat[0] = (int)adns_read_reg(Delta_X_L);
-    xydat[1] = (int)adns_read_reg(Delta_Y_L);
-
-    movementflag=1;
-    }
-  }
-
-void dispRegisters(void){
-  int oreg[7] = {
-    0x00,0x3F,0x2A,0x02  };
-  char* oregname[] = {
-    "Product_ID","Inverse_Product_ID","SROM_Version","Motion"  };
-  byte regres;
-
-  digitalWrite(ncs,LOW);
-
-  int rctr=0;
-  for(rctr=0; rctr<4; rctr++){
-    SPI.transfer(oreg[rctr]);
-    delay(1);
-    Serial.println("---");
-    Serial.println(oregname[rctr]);
-    Serial.println(oreg[rctr],HEX);
-    regres = SPI.transfer(0);
-    Serial.println(regres,BIN);
-    Serial.println(regres,HEX);
-    delay(1);
-  }
-  digitalWrite(ncs,HIGH);
+  delayMicroseconds(10 * 1000);
 }
 
-
-int convTwosComp(int b){
-  //Convert from 2's complement
-  if(b & 0x80){
-    b = -1 * ((b ^ 0xff) + 1);
-    }
-  return b;
-  }
-
-
-void loop() {
-
-  currTime = millis();
-
-  if(currTime > timer){
-    Serial.println(testctr++);
-    timer = currTime + 2000;
-    }
-
-  if(currTime > pollTimer){
-    UpdatePointer();
-    xydat[0] = convTwosComp(xydat[0]);
-    xydat[1] = convTwosComp(xydat[1]);
-      if(xydat[0] != 0 || xydat[1] != 0){
-        Serial.print("x = ");
-        Serial.print(xydat[0]);
-        Serial.print(" | ");
-        Serial.print("y = ");
-        Serial.println(xydat[1]);
-        }
-    pollTimer = currTime + 20;
-    }
-
-}
-
-const unsigned short firmware_length = 4094;
-
-const unsigned char firmware_data[] PROGMEM = {
+static const unsigned char firmware_data[] = {
 0x01, 0x04, 0x8e, 0x96, 0x6e, 0x77, 0x3e, 0xfe, 0x7e, 0x5f, 0x1d, 0xb8, 0xf2, 0x66, 0x4e,
 0xff, 0x5d, 0x19, 0xb0, 0xc2, 0x04, 0x69, 0x54, 0x2a, 0xd6, 0x2e, 0xbf, 0xdd, 0x19, 0xb0,
 0xc3, 0xe5, 0x29, 0xb1, 0xe0, 0x23, 0xa5, 0xa9, 0xb1, 0xc1, 0x00, 0x82, 0x67, 0x4c, 0x1a,
