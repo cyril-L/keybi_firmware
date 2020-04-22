@@ -134,8 +134,10 @@ SRC = 		../../src/main.c                                         \
 			../../src/pwd-safe/password_safe.c	\
 
 # Keybi source files
-SRC += ../../src/keybi/usb.c \
-       ../../src/keybi/keyboard.c
+SRC += ../../src/keybi/keybi.c \
+       ../../src/keybi/hid_keyboard.c \
+       ../../src/keybi/hid_mouse.c \
+       ../../src/keybi/tests.c
 
 			
 # List C source files here which must be compiled in ARM-Mode.

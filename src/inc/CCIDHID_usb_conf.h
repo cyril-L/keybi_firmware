@@ -27,7 +27,7 @@
 /* EP_NUM */
 /* defines how many endpoints are used by the device */
 /*-------------------------------------------------------------*/
-#define CCID_EP_NUM                          (6)
+#define CCID_EP_NUM                          (7)
 
 /*-------------------------------------------------------------*/
 /* -------------- Buffer Description Table ----------------- */
@@ -59,6 +59,9 @@
 
 // EP5, size = 8
 #define CCID_ENDP5_TXADDR        (0x188)
+
+// EP6, size = 5
+#define CCID_ENDP6_TXADDR        (0x190)
 
 // PMA size is 512 bytes, last buffer address + size must be < 0x200
 

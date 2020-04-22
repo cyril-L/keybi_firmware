@@ -221,6 +221,12 @@ void USB_CCID_Reset (void)
     SetEPRxStatus (ENDP5, EP_RX_DIS);
     SetEPTxStatus (ENDP5, EP_TX_NAK);
 
+    /* Initialize Endpoint 6 */
+    SetEPType (ENDP6, EP_INTERRUPT);
+    SetEPTxAddr (ENDP6, CCID_ENDP6_TXADDR);
+    SetEPRxStatus (ENDP6, EP_RX_DIS);
+    SetEPTxStatus (ENDP6, EP_TX_NAK);
+
     /* */
     SetEPRxCount (ENDP0, Device_Property->MaxPacketSize);
     SetEPRxValid (ENDP0);
@@ -256,6 +262,7 @@ void USB_CCID_Storage_SetConfiguration (void)
         // ClearDTOG_TX(ENDP3);
         ClearDTOG_TX (ENDP4);
         ClearDTOG_TX (ENDP5);
+        ClearDTOG_TX (ENDP6);
         Bot_State = BOT_IDLE;   /* set the Bot state machine to the IDLE state */
     }
 }
@@ -405,6 +412,8 @@ uint8_t* (*CopyRoutine) (uint16_t);
                 CopyRoutine = Keyboard_GetReportDescriptor;
             } else if (pInformation->USBwIndex0 == 2) {
                 CopyRoutine = Keybi_Keyboard_GetReportDescriptor;
+            } else if (pInformation->USBwIndex0 == 3) {
+                CopyRoutine = Keybi_Mouse_GetReportDescriptor;
             }
         }
         else if (pInformation->USBwValue1 == HID_DESCRIPTOR_TYPE)
@@ -413,6 +422,8 @@ uint8_t* (*CopyRoutine) (uint16_t);
                 CopyRoutine = Keyboard_GetHIDDescriptor;
             } else if (pInformation->USBwIndex0 == 2) {
                 CopyRoutine = Keybi_Keyboard_GetHIDDescriptor;
+            } else if (pInformation->USBwIndex0 == 3) {
+                CopyRoutine = Keybi_Mouse_GetHIDDescriptor;
             }
         }
 
