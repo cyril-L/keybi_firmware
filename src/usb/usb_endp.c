@@ -26,7 +26,8 @@
 
 #include "platform_config.h"
 #include "CCIDHID_usb.h"
-#include "keybi/usb.h"
+#include "keybi/hid_keyboard.h"
+#include "keybi/hid_mouse.h"
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
@@ -104,4 +105,9 @@ void EP4_IN_Callback (void)
 void EP5_IN_Callback (void)
 {
     Keybi_Keyboard_SendReportCompleted();
+}
+
+void EP6_IN_Callback (void)
+{
+    Keybi_Mouse_SendReportCompleted();
 }

@@ -1,7 +1,12 @@
-#include "keybi/usb.h"
+#include "keybi/hid_keyboard.h"
+
+#include "CCIDHID_usb_conf.h"
+#include "CCIDHID_usb_desc.h"
 
 #include "usb_core.h"
-#include "CCIDHID_usb_desc.h"
+#include "usb_pwr.h"
+#include "usb_mem.h"
+#include "usb_regs.h"
 
 const uint8_t Keybi_Keyboard_ReportDescriptor[KEYBI_KEYBOARD_SIZ_REPORT_DESC] = {
     0x05, 0x01, // USAGE_PAGE (Generic Desktop)
@@ -50,15 +55,31 @@ const uint8_t Keybi_Keyboard_ReportDescriptor[KEYBI_KEYBOARD_SIZ_REPORT_DESC] = 
     0xc0   // END_COLLECTION
 };
 
-// used in usb_endp.c
+static __IO uint8_t prev_xfer_complete = 1;
 
-__IO uint8_t keybi_keyboard_prev_xfer_complete = 1;
+void Keybi_Keyboard_SendReport(uint8_t * report) {
 
-void Keybi_Keyboard_SendReportCompleted(void) {
-    keybi_keyboard_prev_xfer_complete = 1;
+    if (bDeviceState == CONFIGURED)
+    {
+        while (!prev_xfer_complete);
+
+        prev_xfer_complete = 0;
+        /* Use the memory interface function to write to the selected endpoint */
+        UserToPMABufferCopy(report, CCID_ENDP5_TXADDR, KEYBI_KEYBOARD_SIZ_REPORT);
+
+        /* Update the data length in the control register */
+        SetEPTxCount(ENDP5, KEYBI_KEYBOARD_SIZ_REPORT);
+        SetEPTxStatus(ENDP5, EP_TX_VALID);
+    }
 }
 
-// used in CCIDHID_usb_prop.c
+// called in usb_endp.c
+
+void Keybi_Keyboard_SendReportCompleted(void) {
+    prev_xfer_complete = 1;
+}
+
+// called in CCIDHID_usb_prop.c
 
 ONE_DESCRIPTOR Keybi_Keyboard_Report_Descriptor = {
     (uint8_t *) Keybi_Keyboard_ReportDescriptor,
@@ -66,7 +87,7 @@ ONE_DESCRIPTOR Keybi_Keyboard_Report_Descriptor = {
 };
 
 ONE_DESCRIPTOR Keybi_Keyboard_Hid_Descriptor = {
-    (uint8_t *) CCID_ConfigDescriptor + KEYBI_KEYBOARD_KEYBOARD_OFF_HID_DESC,
+    (uint8_t *) CCID_ConfigDescriptor + KEYBI_KEYBOARD_OFF_HID_DESC,
     KEYBI_KEYBOARD_SIZ_HID_DESC
 };
 

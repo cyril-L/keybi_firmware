@@ -27,7 +27,7 @@
 /* EP_NUM */
 /* defines how many endpoints are used by the device */
 /*-------------------------------------------------------------*/
-#define EP_NUM                          (6)
+#define EP_NUM                          (7)
 
 /*-------------------------------------------------------------*/
 /* -------------- Buffer Description Table ----------------- */
@@ -73,7 +73,7 @@
 #define  EP3_IN_Callback   NOP_Process
 // #define EP4_IN_Callback NOP_Process
 // #define  EP5_IN_Callback   NOP_Process
-#define  EP6_IN_Callback   NOP_Process
+// #define  EP6_IN_Callback   NOP_Process
 #define  EP7_IN_Callback   NOP_Process
 
 

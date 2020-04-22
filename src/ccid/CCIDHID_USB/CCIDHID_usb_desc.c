@@ -60,7 +60,7 @@ const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC] = {
     0x02,   /* bDescriptorType */
     CCID_SIZ_CONFIG_DESC,
     0x00,
-    0x02,   /* bNumInterfaces */
+    0x04,   /* bNumInterfaces */
     0x01,   /* bConfigurationValue */
     0x00,   /* iConfiguration CCID = 6 ???? */
     USB_CONFIG_BUS_POWERED, /* bmAttributes */
@@ -211,7 +211,40 @@ const uint8_t CCID_ConfigDescriptor[CCID_SIZ_CONFIG_DESC] = {
     0x05,       // bDescriptorType   Descriptor type (endpoint)
     0x85,       // bEndpointAddress  Endpoint 5 IN
     0x03,       // bmAttributes      Transfer type (interrupt)
-    0x08, 0x00, // wMaxPacketSize    Maximum packet size (8 bytes)
+    WBVAL (KEYBI_KEYBOARD_SIZ_REPORT),
+                // wMaxPacketSize    Maximum packet size (8 bytes)
+    0x0A,       // bInterval         Polling interval
+
+    // Interface 3 descriptor (HID Mouse)
+
+    0x09,   // bLength               Descriptor size (9 bytes)
+    0x04,   // bDescriptorType       Descriptor type (interface)
+    0x03,   // bInterfaceNumber      Interface Number
+    0x00,   // bAlternateSetting     Alternate Setting Number (none)
+    0x01,   // bNumEndpoints         Number of endpoints
+    0x03,   // bInterfaceClass       Interface class (HID)
+    0x01,   // bInterfaceSubClass    Interface subclass (boot)
+    0x02,   // nInterfaceProtocol    Interface protocol (mouse)
+    0x00,   // iInterface            Interface string index (none)
+
+    // Mouse HID class descriptor
+
+    0x09,       // bLength           Descriptor size (9 bytes)
+    0x21,       // bDescriptorType   Descriptor type (HID)
+    0x10, 0x01, // bcdHID            HID release number (1.1)
+    0x00,       // bCountryCode      Hardware target country (not supported)
+    0x01,       // bNumDescriptors   Number class descriptors
+    0x22,       // bDescriptorType   Class descriptor type (report)
+    WBVAL (KEYBI_MOUSE_SIZ_REPORT_DESC),
+                // wItemLength       Report descriptor size
+
+    // Endpoint 6 descriptor
+    0x07,       // bLength           Descriptor size (7 bytes)
+    0x05,       // bDescriptorType   Descriptor type (endpoint)
+    0x86,       // bEndpointAddress  Endpoint 6 IN
+    0x03,       // bmAttributes      Transfer type (interrupt)
+    WBVAL (KEYBI_MOUSE_SIZ_REPORT),
+                // wMaxPacketSize    Maximum packet size (5 bytes)
     0x0A        // bInterval         Polling interval
 };
 

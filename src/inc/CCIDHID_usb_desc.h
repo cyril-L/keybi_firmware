@@ -25,13 +25,14 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include "stm32f10x.h"
-#include "keybi/usb.h"
+#include "keybi/hid_keyboard.h"
+#include "keybi/hid_mouse.h"
 /* Exported types ------------------------------------------------------------ */
 /* Exported constants -------------------------------------------------------- */
 /* Exported macro ------------------------------------------------------------ */
 /* Exported define ----------------------------------------------------------- */
 #define CCID_SIZ_DEVICE_DESC              18
-#define CCID_SIZ_CONFIG_DESC              (1*0x09 + 2*0x09+ 1*0x07+ 0x09 + 0x36+3*0x07 + 25)
+#define CCID_SIZ_CONFIG_DESC              (1*0x09 + 2*0x09+ 1*0x07+ 0x09 + 0x36+3*0x07 + 25 + 25)
 // #define CCID_SIZ_CONFIG_DESC (1*0x09 + 3*0x09 +0x36 + 4*0x07)
 // #define CCID_SIZ_CONFIG_DESC (3*0x09 +2*0x36 + 6*0x07)
 
