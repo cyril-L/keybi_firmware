@@ -49,10 +49,12 @@
 /* Define the STM32F10x hardware depending on the used evaluation board */
 #ifdef USE_STM3210B_EVAL
 
-#define USB_DISCONNECT                    GPIOA
-#define USB_DISCONNECT_PIN                GPIO_Pin_15   // Use GPIO_Pin_10
+// FIXME changed for patched keybi board, revert to PA15 like on nkpro
+// (routed without USB_EN / DISCONNECT, but had trouble enumerating without it
+#define USB_DISCONNECT                    GPIOC
+#define USB_DISCONNECT_PIN                GPIO_Pin_8   // Use GPIO_Pin_10
                                                         // for older PCB
-#define RCC_APB2Periph_GPIO_DISCONNECT    RCC_APB2Periph_GPIOA
+#define RCC_APB2Periph_GPIO_DISCONNECT    RCC_APB2Periph_GPIOC
 
 
 // smartcard power supply
