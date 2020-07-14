@@ -138,6 +138,7 @@ SRC += ../../src/keybi/keybi.c \
        ../../src/keybi/hid_keyboard.c \
        ../../src/keybi/hid_mouse.c \
        ../../src/keybi/keymap.c \
+       ../../src/keybi/drivers/delay.c \
        ../../src/keybi/drivers/pmw3360.c \
        ../../src/keybi/drivers/matrix.c
 

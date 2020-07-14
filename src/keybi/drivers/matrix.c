@@ -1,5 +1,5 @@
 #include "keybi/drivers/matrix.h"
-#include "stm32f10x_systick.h"
+#include "keybi/drivers/delay.h"
 
 typedef struct gpio_t {
 	GPIO_TypeDef * port;
@@ -53,29 +53,6 @@ void Keybi_Matrix_Init(void) {
 		GPIO_Init(cols[c].port, &GPIO_InitStructure);
 	}
 }
-static void delayMicroseconds(uint32_t delay_us);
-static void delayMicroseconds(uint32_t delay_us)
-{
-    uint32_t remaining_ticks = delay_us * 72;
-
-    uint32_t prev = SysTick_GetCounter();
-
-  while (1)
-  {
-      uint32_t curr = SysTick_GetCounter();
-      uint32_t elapsed;
-      if (curr > prev) {
-          elapsed = prev; // FIXME don’t know initial value
-      } else {
-          elapsed = prev - curr;
-      }
-      if (elapsed > remaining_ticks) {
-          break;
-      }
-      remaining_ticks -= elapsed;
-      prev = curr;
-  }
-}
 
 void Keybi_Matrix_Scan(int (*callback)(keybi_keyboard_matrix_event_t)) {
 	for (uint8_t c = 0; c < KEYBI_MATRIX_COLS; ++c) {
@@ -98,6 +75,6 @@ void Keybi_Matrix_Scan(int (*callback)(keybi_keyboard_matrix_event_t)) {
 		GPIO_ResetBits(cols[c].port, cols[c].pin);
 		// Adjacent columns of the first rows registered on a single key press
 		// TODO investigate why and find the appropriate delay
-		delayMicroseconds(100);
+		Keybi_DelayUs(100);
 	}
 }
