@@ -11,9 +11,6 @@ void Keybi_Init(void) {
     Keybi_Matrix_Init();
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 static int8_t SignedByteClamp(int value) {
 	if (value < -128) {
 		return -128;
@@ -23,6 +20,15 @@ static int8_t SignedByteClamp(int value) {
 	}
 	return value;
 }
+int32_t move_x = 0;
+int32_t move_y = 0;
+int32_t scroll_v = 0;
+int32_t scroll_h = 0;
+
+#define MOVE_X_SCALE (3.f / 4.f)
+#define MOVE_Y_SCALE (1.f / 2.f)
+#define SCROLL_V_SCALE (-MOVE_Y_SCALE / 30.0)
+#define SCROLL_H_SCALE (MOVE_X_SCALE / 30.0)
 
 void Keybi_MainLoop(void)
 {
@@ -42,21 +48,41 @@ void Keybi_MainLoop(void)
     		keybi_keyboard_layer = L_MOUSE;
     		keybi_mouse_is_scrolling = 0;
     	}
-    	int dx = SignedByteClamp(3 * ((int)trackball_motion.dy) / 4);
-    	int dy = SignedByteClamp(trackball_motion.dx / 2);
-
     	if (!keybi_mouse_is_scrolling) {
-    		mouse_hid_report[1] = dx;
-    		mouse_hid_report[2] = dy;
-    		mouse_hid_report[3] = 0;
-    		mouse_hid_report[4] = 0;
+
+        	move_x += trackball_motion.dy;
+        	move_y += trackball_motion.dx;
+
+        	int8_t dx = SignedByteClamp(move_x * MOVE_X_SCALE);
+        	int8_t dy = SignedByteClamp(move_y * MOVE_Y_SCALE);
+
+        	if (dx != 0 || dy != 0) {
+        		mouse_hid_report[1] = dx;
+        		mouse_hid_report[2] = dy;
+        		mouse_hid_report[3] = 0;
+        		mouse_hid_report[4] = 0;
+        		Keybi_Mouse_SendReport(mouse_hid_report);
+            	move_x -= dx / MOVE_X_SCALE;
+            	move_y -= dy / MOVE_Y_SCALE;
+        	}
     	} else {
-    		mouse_hid_report[1] = 0;
-    		mouse_hid_report[2] = 0;
-    		mouse_hid_report[3] = -dy/3;
-    		mouse_hid_report[4] = dx/3;
+
+    		scroll_h += trackball_motion.dy;
+    		scroll_v += trackball_motion.dx;
+
+        	int8_t dh = SignedByteClamp(scroll_h * SCROLL_H_SCALE);
+        	int8_t dv = SignedByteClamp(scroll_v * SCROLL_V_SCALE);
+
+        	if (dh != 0 || dv != 0) {
+        		mouse_hid_report[1] = 0;
+        		mouse_hid_report[2] = 0;
+        		mouse_hid_report[3] = dv;
+        		mouse_hid_report[4] = dh;
+        		Keybi_Mouse_SendReport(mouse_hid_report);
+        		scroll_h -= dh / SCROLL_H_SCALE;
+        		scroll_v -= dv / SCROLL_V_SCALE;
+        	}
     	}
-        Keybi_Mouse_SendReport(mouse_hid_report);
     }
     if (mouse_hid_report[0] != keybi_mouse_buttons) {
     	mouse_hid_report[0] = keybi_mouse_buttons;
@@ -67,5 +93,3 @@ void Keybi_MainLoop(void)
     	Keybi_Mouse_SendReport(mouse_hid_report);
     }
 }
-
-#pragma GCC pop_options
