@@ -96,3 +96,22 @@ TEST(KeyboardEventQueue, HandlesMultipleKeypresses) {
         EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
     }
 }
+
+TEST(KeyboardEventQueue, HandlesModpresses) {
+    uint8_t report[8] = {0};
+    keybi_keyboard_event_t events[8];
+    keybi_keyboard_event_queue_t  queue = MakeQueue(events, 8);
+    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_LCTL, .pressed = 1});
+    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_LCTL, .pressed = 0});
+
+    {
+        Keybi_Keyboard_QueueToReport(&queue, report);
+        uint8_t report_expected[8] = {1, 0, 0, 0, 0, 0, 0, 0};
+        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+    }
+    {
+        Keybi_Keyboard_QueueToReport(&queue, report);
+        uint8_t report_expected[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+    }
+}

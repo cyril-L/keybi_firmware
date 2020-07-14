@@ -135,6 +135,12 @@ int Keybi_Keyboard_QueueToReport(keybi_keyboard_event_queue_t * queue, uint8_t *
                 }
             }
         }
+    } else if (IS_MOD(event->keycode)) {
+    	if (event->pressed) {
+            report[0] |= MOD_BIT(event->keycode);
+    	} else {
+            report[0] &= ~MOD_BIT(event->keycode);
+        }
     }
     return 1;
 }
