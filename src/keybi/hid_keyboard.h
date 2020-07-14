@@ -29,6 +29,7 @@ typedef struct {
 	uint32_t capacity;
 } keybi_keyboard_event_queue_t;
 
+int Keybi_Keyboard_QueueEvents(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t * event, uint8_t count);
 int Keybi_Keyboard_QueueEvent(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t event);
 
 int Keybi_Keyboard_QueueToReport(keybi_keyboard_event_queue_t * queue, uint8_t * report);

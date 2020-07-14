@@ -79,7 +79,7 @@ static void delayMicroseconds(uint32_t delay_us)
 
 void Keybi_Matrix_Scan(int (*callback)(keybi_keyboard_matrix_event_t)) {
 	for (uint8_t c = 0; c < KEYBI_MATRIX_COLS; ++c) {
-		GPIO_SetBits(cols[c].port,  cols[c].pin);
+		GPIO_SetBits(cols[c].port, cols[c].pin);
 		for (uint8_t r = 0; r < KEYBI_MATRIX_ROWS; ++r) {
 			uint8_t state = GPIO_ReadInputDataBit(rows[r].port, rows[r].pin);
 			if (state != key_states[c][r]) {
@@ -95,7 +95,9 @@ void Keybi_Matrix_Scan(int (*callback)(keybi_keyboard_matrix_event_t)) {
 				}
 			}
 		}
-		GPIO_ResetBits(cols[c].port,  cols[c].pin);
+		GPIO_ResetBits(cols[c].port, cols[c].pin);
+		// Adjacent columns of the first rows registered on a single key press
+		// TODO investigate why and find the appropriate delay
 		delayMicroseconds(100);
 	}
 }

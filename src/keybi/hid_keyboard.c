@@ -102,14 +102,20 @@ uint8_t* Keybi_Keyboard_GetHIDDescriptor(uint16_t Length)
     return Standard_GetDescriptorData(Length, &Keybi_Keyboard_Hid_Descriptor);
 }
 
-int Keybi_Keyboard_QueueEvent(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t event) {
-	if (queue->size >= queue->capacity) {
+int Keybi_Keyboard_QueueEvents(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t * events, uint8_t count) {
+	if (queue->size + count > queue->capacity) {
 		return -1;
 	}
-	unsigned tail = (queue->head + queue->size) % queue->capacity;
-	queue->events[tail] = event;
-    queue->size++;
+	for (int i = 0; i < count; ++i) {
+		unsigned tail = (queue->head + queue->size) % queue->capacity;
+		queue->events[tail] = events[i];
+	    queue->size++;
+	}
 	return 0;
+}
+
+int Keybi_Keyboard_QueueEvent(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t event) {
+	return Keybi_Keyboard_QueueEvents(queue, &event, 1);
 }
 
 int Keybi_Keyboard_QueueToReport(keybi_keyboard_event_queue_t * queue, uint8_t * report) {
