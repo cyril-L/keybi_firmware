@@ -1,4 +1,5 @@
 #include "keybi/hid_keyboard.h"
+#include "keybi/qmk/keycode.h"
 
 #include "CCIDHID_usb_conf.h"
 #include "CCIDHID_usb_desc.h"
@@ -99,4 +100,41 @@ uint8_t* Keybi_Keyboard_GetReportDescriptor(uint16_t Length)
 uint8_t* Keybi_Keyboard_GetHIDDescriptor(uint16_t Length)
 {
     return Standard_GetDescriptorData(Length, &Keybi_Keyboard_Hid_Descriptor);
+}
+
+int Keybi_Keyboard_QueueEvent(keybi_keyboard_event_queue_t * queue, keybi_keyboard_event_t event) {
+	if (queue->size >= queue->capacity) {
+		return -1;
+	}
+	unsigned tail = (queue->head + queue->size) % queue->capacity;
+	queue->events[tail] = event;
+    queue->size++;
+	return 0;
+}
+
+int Keybi_Keyboard_QueueToReport(keybi_keyboard_event_queue_t * queue, uint8_t * report) {
+    if (queue->size == 0) {
+        return 0;
+    }
+    keybi_keyboard_event_t * event = &queue->events[queue->head];
+    queue->head = (queue->head + 1) % queue->capacity;
+    queue->size--;
+    if (IS_KEY(event->keycode)) {
+        if (event->pressed) {
+            for (int i = 2; i < 8; ++i) {
+                if (report[i] == 0) {
+                    report[i] = event->keycode;
+                    break;
+                }
+            }
+        } else {
+            for (int i = 2; i < 8; ++i) {
+                if (report[i] == event->keycode) {
+                    report[i] = 0;
+                    break;
+                }
+            }
+        }
+    }
+    return 1;
 }

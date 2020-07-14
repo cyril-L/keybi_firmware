@@ -4,10 +4,10 @@ FIRMWARE_SRC = ../..
 INCDIRS = . \
 	$(GTEST) \
 	$(FIRMWARE_SRC) \
-	$(FIRMWARE_SRC)/inc
+	$(FIRMWARE_SRC)/inc \
+	$(FIRMWARE_SRC)/stm/Libraries/STM32_USB-FS-Device_Driver/inc
 
-CC = g++
-CFLAGS = -g -std=c++11 -Wall -Wextra -lpthread -pthread
+CFLAGS = -g -Wall -Wextra -lpthread -pthread
 
 CFLAGS += $(patsubst %,-I%,$(INCDIRS))
 
@@ -19,15 +19,20 @@ clean:
 	rm -f *.o test
 
 %.o : $(GTEST)/src/%.cc
-	$(CC) $(CFLAGS) -c $< -o $@
+	g++ $(CFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
-
-CCIDHID_usb_desc.o: $(FIRMWARE_SRC)/ccid/CCIDHID_USB/CCIDHID_usb_desc.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	g++ $(CFLAGS) -c $< -o $@
 
 USB_DESCRIPTORS_TEST = usb_descriptors.o CCIDHID_usb_desc.o
 
-test: gtest-all.o gtest_main.o $(USB_DESCRIPTORS_TEST)
-	$(CC) $(CFLAGS) $^ -o $@
+CCIDHID_usb_desc.o: $(FIRMWARE_SRC)/ccid/CCIDHID_USB/CCIDHID_usb_desc.c
+	gcc $(CFLAGS) -c $< -o $@
+
+KEYBOARD_EVENT_QUEUE_TEST = keyboard_event_queue.o hid_keyboard.o
+
+hid_keyboard.o: $(FIRMWARE_SRC)/keybi/hid_keyboard.c
+	gcc $(CFLAGS) -c $< -o $@
+
+test: gtest-all.o gtest_main.o $(USB_DESCRIPTORS_TEST) $(KEYBOARD_EVENT_QUEUE_TEST)
+	g++ $(CFLAGS) $^ -o $@
