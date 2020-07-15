@@ -8,7 +8,7 @@
 #include "keybi/drivers/pmw3360.h"
 
 #include "stm32f10x_spi.h"
-#include "stm32f10x_systick.h"
+#include "keybi/drivers/delay.h"
 
 // Registers
 #define Product_ID  0x00
@@ -68,7 +68,6 @@ int init_complete = 0;
 static const unsigned char firmware_data[4094];
 
 static void performStartup(void);
-static void delayMicroseconds(uint32_t delay_us);
 static byte adns_read_reg(byte reg_addr);
 static void adns_write_reg(byte reg_addr, byte data);
 
@@ -111,7 +110,7 @@ int Keybi_Pmw3360_Init() {
 
     performStartup();
 
-    delayMicroseconds(1000 * 1000); // 1s (TODO was 5s but 1s is still too long I guess)
+    Keybi_DelayUs(1000 * 1000); // 1s (TODO was 5s but 1s is still too long I guess)
 
     uint8_t product_id = adns_read_reg(Product_ID);
     uint8_t inverse_product_id = adns_read_reg(Inverse_Product_ID);
@@ -134,29 +133,6 @@ void Keybi_Pmw3360_Read(keybi_pmw3360_motion_t * motion) {
         motion->dx = 0;
         motion->dy = 0;
     }
-}
-
-static void delayMicroseconds(uint32_t delay_us)
-{
-    uint32_t remaining_ticks = delay_us * 72;
-
-    uint32_t prev = SysTick_GetCounter();
-
-  while (1)
-  {
-      uint32_t curr = SysTick_GetCounter();
-      uint32_t elapsed;
-      if (curr > prev) {
-          elapsed = prev; // FIXME don’t know initial value
-      } else {
-          elapsed = prev - curr;
-      }
-      if (elapsed > remaining_ticks) {
-          break;
-      }
-      remaining_ticks -= elapsed;
-      prev = curr;
-  }
 }
 
 static uint8_t Keybi_Pmw3360_SpiTransfer(uint8_t data);
@@ -186,13 +162,13 @@ static byte adns_read_reg(byte reg_addr){
 
   // send adress of the register, with MSBit = 0 to indicate it's a read
   Keybi_Pmw3360_SpiTransfer(reg_addr & 0x7f );
-  delayMicroseconds(100); // tSRAD
+  Keybi_DelayUs(100); // tSRAD
   // read data
   byte data = Keybi_Pmw3360_SpiTransfer(0);
 
-  delayMicroseconds(1); // tSCLK-NCS for read operation is 120ns
+  Keybi_DelayUs(1); // tSCLK-NCS for read operation is 120ns
   adns_com_end();
-  delayMicroseconds(19); //  tSRW/tSRR (=20us) minus tSCLK-NCS
+  Keybi_DelayUs(19); //  tSRW/tSRR (=20us) minus tSCLK-NCS
 
   return data;
 }
@@ -205,9 +181,9 @@ static void adns_write_reg(byte reg_addr, byte data){
   //sent data
   Keybi_Pmw3360_SpiTransfer(data);
 
-  delayMicroseconds(20); // tSCLK-NCS for write operation
+  Keybi_DelayUs(20); // tSCLK-NCS for write operation
   adns_com_end();
-  delayMicroseconds(100); // tSWW/tSWR (=120us) minus tSCLK-NCS. Could be shortened, but is looks like a safe lower bound 
+  Keybi_DelayUs(100); // tSWW/tSWR (=120us) minus tSCLK-NCS. Could be shortened, but is looks like a safe lower bound
 }
 
 static void adns_upload_firmware(void);
@@ -222,7 +198,7 @@ static void adns_upload_firmware(){
   adns_write_reg(SROM_Enable, 0x1d); 
 
   // wait for more than one frame period
-  delayMicroseconds(10 * 1000); // assume that the frame rate is as low as 100fps... even if it should never be that low
+  Keybi_DelayUs(10 * 1000); // assume that the frame rate is as low as 100fps... even if it should never be that low
 
   // write 0x18 to SROM_enable to start SROM download
   adns_write_reg(SROM_Enable, 0x18); 
@@ -230,12 +206,12 @@ static void adns_upload_firmware(){
   // write the SROM file (=firmware data) 
   adns_com_begin();
   Keybi_Pmw3360_SpiTransfer(SROM_Load_Burst | 0x80); // write burst destination adress
-  delayMicroseconds(15);
+  Keybi_DelayUs(15);
 
   // send all bytes of the firmware
   for(int i = 0; i < sizeof(firmware_data); i++){
     Keybi_Pmw3360_SpiTransfer(firmware_data[i]);
-    delayMicroseconds(15);
+    Keybi_DelayUs(15);
   }
 
   //Read the SROM_ID register to verify the ID before any other register reads or writes.
@@ -256,7 +232,7 @@ static void performStartup(void){
   adns_com_begin(); // ensure that the serial port is reset
   adns_com_end(); // ensure that the serial port is reset
   adns_write_reg(Power_Up_Reset, 0x5a); // force reset
-  delayMicroseconds(50 * 1000); // wait for it to reboot
+  Keybi_DelayUs(50 * 1000); // wait for it to reboot
   // read registers 0x02 to 0x06 (and discard the data)
   adns_read_reg(Motion);
   adns_read_reg(Delta_X_L);
@@ -265,7 +241,7 @@ static void performStartup(void){
   adns_read_reg(Delta_Y_H);
   // upload the firmware
   adns_upload_firmware();
-  delayMicroseconds(10 * 1000);
+  Keybi_DelayUs(10 * 1000);
 }
 
 static const unsigned char firmware_data[] = {

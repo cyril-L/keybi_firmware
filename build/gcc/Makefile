@@ -137,8 +137,10 @@ SRC = 		../../src/main.c                                         \
 SRC += ../../src/keybi/keybi.c \
        ../../src/keybi/hid_keyboard.c \
        ../../src/keybi/hid_mouse.c \
-       ../../src/keybi/tests.c \
-       ../../src/keybi/drivers/pmw3360.c
+       ../../src/keybi/keymap.c \
+       ../../src/keybi/drivers/delay.c \
+       ../../src/keybi/drivers/pmw3360.c \
+       ../../src/keybi/drivers/matrix.c
 
 			
 # List C source files here which must be compiled in ARM-Mode.
