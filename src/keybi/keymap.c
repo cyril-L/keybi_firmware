@@ -140,6 +140,26 @@ int Keybi_Keymap_EventHandler(keybi_keyboard_matrix_event_t matrix_event) {
 			return 0;
 		} else if (keycode == ____) {
 			keycode = keymaps[L_BASE][matrix_event.row][matrix_event.col];
+			if (keybi_keyboard_layer == L_FN && IS_KEY(keycode)) {
+				if (matrix_event.pressed) {
+					// TODO only handle taps for now
+					keybi_keyboard_event_t events[10] = {
+						{KC_LCTRL, 1},
+						{KC_LSHIFT, 1},
+						{KC_LALT, 1},
+						{KC_LGUI, 1},
+						{keycode, 1},
+						{keycode, 0},
+						{KC_LCTRL, 0},
+						{KC_LSHIFT, 0},
+						{KC_LALT, 0},
+						{KC_LGUI, 0}
+					};
+					return Keybi_Keyboard_QueueEvents(&keybi_keymap_events, events, 10);
+				} else {
+					return 0;
+				}
+			}
 			continue; // handle this keycode if special
 		} else if (keycode == CL_PARENS && matrix_event.pressed) {
 			keybi_keyboard_event_t events[6] = {

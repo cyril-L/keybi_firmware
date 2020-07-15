@@ -106,3 +106,33 @@ TEST_F(Keymap, HandlesRollingFnLayerKeys) {
         ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
     }
 }
+
+TEST_F(Keymap, HandlesTransparentFnLayerKeysAsHypr) {
+    event_to_make_t events[] = {
+        {CL_FN_SWITCH, 1},
+        {KC_A, 1},
+        {KC_A, 0},
+        {CL_FN_SWITCH, 0}
+    };
+    for (int i = 0; i < 4; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_LCTRL, 1},
+        {KC_LSHIFT, 1},
+        {KC_LALT, 1},
+        {KC_LGUI, 1},
+        {KC_A, 1},
+        {KC_A, 0},
+        {KC_LCTRL, 0},
+        {KC_LSHIFT, 0},
+        {KC_LALT, 0},
+        {KC_LGUI, 0},
+    };
+    for (unsigned i = 0; i < 10; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
+    ASSERT_EQ(L_BASE, keybi_keyboard_layer);
+}
