@@ -1,5 +1,4 @@
 #include "keybi/keymap.h"
-#include "keybi/qmk/keycode.h"
 #include "keybi/drivers/matrix.h"
 
 // Quick and dirty way to get a keymap behaving like a previous experiment
@@ -10,22 +9,6 @@
 #define SAFE_RANGE (0x100)
 #define ____ KC_TRNS
 #define XXXX KC_NO
-
-enum custom_keycodes {
-  CL_FN_SWITCH = SAFE_RANGE,
-  CL_CODE_SWITCH,
-  CL_TOGGLE_DIGITS,
-  CL_SQUOTS,
-  CL_DQUOTS,
-  CL_PARENS,
-  CL_BRCKTS,
-  CL_BRACES,
-  CL_CMD_CTRL,
-  CL_TOGGLE_CMD_CTRL,
-  CL_MOUSE_OUT,
-  CL_MOUSE_TOGGLE_SCROLL,
-  CL_SAFE_RANGE
-};
 
 #define OOOO CL_MOUSE_OUT
 
@@ -104,6 +87,8 @@ static int key_pressed_on_code_layer = 0;
 
 int keybi_mouse_is_scrolling = 0;
 uint8_t keybi_mouse_buttons = 0;
+
+uint16_t registered_events[KEYBI_MATRIX_ROWS][KEYBI_MATRIX_COLS] = {KC_NO};
 
 int Keybi_Keymap_EventHandler(keybi_keyboard_matrix_event_t matrix_event) {
 
@@ -227,6 +212,21 @@ int Keybi_Keymap_EventHandler(keybi_keyboard_matrix_event_t matrix_event) {
 		// no need to handle this keycode further
 		break;
 	};
+
+	// TODO uggly fix
+	if (matrix_event.pressed) {
+		// indicates this row/col key has been registered as keycode
+		registered_events[matrix_event.row][matrix_event.col] = keycode;
+	} else {
+		if (registered_events[matrix_event.row][matrix_event.col] != KC_NO) {
+			// replace the keycode by what it was when pressed
+			// handles keys pressed when one layer was active and released
+			// when it was no longer active.
+			keycode = registered_events[matrix_event.row][matrix_event.col];
+		}
+		registered_events[matrix_event.row][matrix_event.col] = KC_NO;
+	}
+
 	// TODO check if keycode is not special here
 	keybi_keyboard_event_t key_event = {
 			.keycode = keycode,
