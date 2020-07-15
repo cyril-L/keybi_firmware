@@ -127,17 +127,24 @@ int Keybi_Keyboard_QueueToReport(keybi_keyboard_event_queue_t * queue, uint8_t *
     queue->size--;
     if (IS_KEY(event->keycode)) {
         if (event->pressed) {
+            // Do not add a pressed event if already pressed
+            for (int i = 2; i < 8; ++i) {
+                if (report[i] == event->keycode) {
+                    return 1;
+                }
+            }
+            // Add the pressed event to the first available report byte
             for (int i = 2; i < 8; ++i) {
                 if (report[i] == 0) {
                     report[i] = event->keycode;
-                    break;
+                    return 1;
                 }
             }
         } else {
             for (int i = 2; i < 8; ++i) {
                 if (report[i] == event->keycode) {
                     report[i] = 0;
-                    break;
+                    return 1;
                 }
             }
         }

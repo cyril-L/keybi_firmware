@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <cstring>
-#include <sstream>
 
 extern "C" {
     #include "keybi/hid_keyboard.h"
@@ -15,103 +14,134 @@ extern "C" {
     uint8_t* Standard_GetDescriptorData (uint16_t, ONE_DESCRIPTOR *) { return NULL; }
 }
 
-keybi_keyboard_event_queue_t MakeQueue(keybi_keyboard_event_t * events, uint32_t capacity) {
-    keybi_keyboard_event_queue_t queue = {
-        .events = events,
-        .head = 0,
-        .size = 0,
-        .capacity = capacity
-    };
-    return queue;
-}
+class KeyboardEventQueue : public ::testing::Test {
+
+ protected:
+
+    uint8_t report[8] = {0};
+    keybi_keyboard_event_t queue_data[16];
+    keybi_keyboard_event_queue_t queue;
+
+    KeyboardEventQueue() :
+        report {0},
+        queue_data {0,0},
+        queue({
+            .events = queue_data,
+            .head = 0,
+            .size = 0,
+            .capacity = 16
+        })
+    {}
+};
 
 bool ReportsEq(uint8_t expected[8], uint8_t actual[8]) {
     return 0 == std::memcmp(expected, actual, 8);
 }
 
-std::string ReportAsStr(uint8_t report[8]) {
-    std::ostringstream s;
-    s << "{";
+std::ostream &operator<<(std::ostream &os, const uint8_t (& report) [8]) {
+    os << "{";
     for (int i = 0; i < 8; ++i) {
-        s << " " << (int) report[i];
+        os << " " << (int) report[i];
     }
-    s << " }";
-    return s.str();
+    os << " }";
+    return os;
 }
 
-TEST(KeyboardEventQueue, HandlesASingleKeypress) {
-    uint8_t report[8] = {0};
-    keybi_keyboard_event_t events[8];
-    keybi_keyboard_event_queue_t  queue = MakeQueue(events, 8);
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_A, .pressed = 1});
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_A, .pressed = 0});
-    {
+TEST_F(KeyboardEventQueue, HandlesASingleKeypress) {
+    keybi_keyboard_event_t events[] = {
+        {KC_A, 1},
+        {KC_A, 0}
+    };
+    Keybi_Keyboard_QueueEvents(&queue, events, 2);
+
+    uint8_t expected_reports[2][8] = {
+        {0, 0, KC_A, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+
+    for (int i = 0; i < 2; ++i) {
         ASSERT_TRUE(Keybi_Keyboard_QueueToReport(&queue, report));
-        uint8_t report_expected[8] = {0, 0, KC_A, 0, 0, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
-    }
-    {
-        ASSERT_TRUE(Keybi_Keyboard_QueueToReport(&queue, report));
-        uint8_t report_expected[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+        ASSERT_TRUE(ReportsEq(expected_reports[i], report)) << i << ": " << report;
     }
     ASSERT_FALSE(Keybi_Keyboard_QueueToReport(&queue, report));
 }
 
-TEST(KeyboardEventQueue, TellsWhenFull) {
-    // A queue that can hold 2 events
-    keybi_keyboard_event_t events[2];
-    keybi_keyboard_event_queue_t  queue = MakeQueue(events, 2);
-    ASSERT_EQ(0, Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_A, .pressed = 1}));
-    ASSERT_EQ(0, Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_B, .pressed = 1}));
-    ASSERT_NE(0, Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_C, .pressed = 1}));
-    ASSERT_EQ(KC_A, events[0].keycode);
-    ASSERT_EQ(KC_B, events[1].keycode);
+TEST_F(KeyboardEventQueue, TellsWhenFull) {
+    for (unsigned i = 0; i < queue.capacity; ++i) {
+        ASSERT_EQ(0, Keybi_Keyboard_QueueEvent(&queue, {KC_A, 1}));
+    }
+    ASSERT_NE(0, Keybi_Keyboard_QueueEvent(&queue, {KC_B, 1}));
     // B has not been added
-}
-
-TEST(KeyboardEventQueue, HandlesMultipleKeypresses) {
-    uint8_t report[8] = {0};
-    keybi_keyboard_event_t events[8];
-    keybi_keyboard_event_queue_t  queue = MakeQueue(events, 8);
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_A, .pressed = 1});
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_B, .pressed = 1});
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_C, .pressed = 1});
-    int generated_reports = 0;
-    while (Keybi_Keyboard_QueueToReport(&queue, report)) { generated_reports++; }
-    // for now 3 reports should have been generated
-    // TODO just generate one
-    ASSERT_EQ(3, generated_reports);
-
-    {
-        uint8_t report_expected[8] = {0, 0, KC_A, KC_B, KC_C, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
-    }
-
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_B, .pressed = 0});
-    Keybi_Keyboard_QueueToReport(&queue, report);
-
-    {
-        uint8_t report_expected[8] = {0, 0, KC_A, 0, KC_C, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+    for (unsigned i = 0; i < queue.capacity; ++i) {
+        ASSERT_EQ(KC_A, queue.events[i].keycode);
     }
 }
 
-TEST(KeyboardEventQueue, HandlesModpresses) {
-    uint8_t report[8] = {0};
-    keybi_keyboard_event_t events[8];
-    keybi_keyboard_event_queue_t  queue = MakeQueue(events, 8);
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_LCTL, .pressed = 1});
-    Keybi_Keyboard_QueueEvent(&queue, {.keycode = KC_LCTL, .pressed = 0});
+TEST_F(KeyboardEventQueue, HandlesMultipleKeypresses) {
+    keybi_keyboard_event_t events[] = {
+        {KC_A, 1},
+        {KC_B, 1},
+        {KC_C, 1},
+        {KC_B, 0}
+    };
+    Keybi_Keyboard_QueueEvents(&queue, events, 3);
 
-    {
-        Keybi_Keyboard_QueueToReport(&queue, report);
-        uint8_t report_expected[8] = {1, 0, 0, 0, 0, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+    uint8_t expected_reports[4][8] = {
+        {0, 0, KC_A, 0, 0, 0, 0, 0},
+        {0, 0, KC_A, KC_B, 0, 0, 0, 0},
+        {0, 0, KC_A, KC_B, KC_C, 0, 0, 0},
+        {0, 0, KC_A, 0, KC_C, 0, 0, 0}
+    };
+
+    for (int i = 0; i < 3; ++i) {
+        ASSERT_TRUE(Keybi_Keyboard_QueueToReport(&queue, report));
+        ASSERT_TRUE(ReportsEq(expected_reports[i], report)) << i << ": " << report;
     }
-    {
-        Keybi_Keyboard_QueueToReport(&queue, report);
-        uint8_t report_expected[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        EXPECT_TRUE(ReportsEq(report_expected, report)) << ReportAsStr(report);
+    ASSERT_FALSE(Keybi_Keyboard_QueueToReport(&queue, report));
+}
+
+TEST_F(KeyboardEventQueue, HandlesModpresses) {
+
+    keybi_keyboard_event_t events[] = {
+        {KC_LCTL, 1},
+        {KC_LCTL, 0}
+    };
+    Keybi_Keyboard_QueueEvents(&queue, events, 2);
+
+    uint8_t expected_reports[][8] = {
+        {1, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+
+    for (int i = 0; i < 2; ++i) {
+        ASSERT_TRUE(Keybi_Keyboard_QueueToReport(&queue, report));
+        ASSERT_TRUE(ReportsEq(expected_reports[i], report)) << i << ": " << report;
     }
+    ASSERT_FALSE(Keybi_Keyboard_QueueToReport(&queue, report));
+}
+
+TEST_F(KeyboardEventQueue, DoNotRegisterTheSameKeycodeMultipleTimes) {
+    // On keymaps, more than one key may be mapped to the same keycode
+    // so the same keycode might be pressed two times in the queue
+
+    keybi_keyboard_event_t events[] = {
+        {KC_UP, 1},
+        {KC_UP, 1},
+        {KC_UP, 0},
+        {KC_UP, 0}
+    };
+    Keybi_Keyboard_QueueEvents(&queue, events, 4);
+
+    uint8_t expected_reports[4][8] = {
+        {0, 0, KC_UP, 0, 0, 0, 0, 0},
+        {0, 0, KC_UP, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0}
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_TRUE(Keybi_Keyboard_QueueToReport(&queue, report));
+        EXPECT_TRUE(ReportsEq(expected_reports[i], report)) << i << ": " << report;
+    }
+    EXPECT_FALSE(Keybi_Keyboard_QueueToReport(&queue, report));
 }
