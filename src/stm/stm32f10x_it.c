@@ -27,6 +27,7 @@
 #include "hw_config.h"
 #include "platform_config.h"
 #include "hotp.h"
+#include "keybi/drivers/time.h"
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
@@ -170,6 +171,7 @@ void SysTick_Handler (void)
         TimeCounter = 100;
         current_time++;
     }
+    keybi_systick_counter++;
 }
 
 /******************************************************************************/

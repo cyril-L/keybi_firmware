@@ -1,5 +1,5 @@
 #include "keybi/drivers/matrix.h"
-#include "keybi/drivers/delay.h"
+#include "keybi/drivers/time.h"
 
 typedef struct gpio_t {
 	GPIO_TypeDef * port;
@@ -30,6 +30,7 @@ static gpio_t cols[KEYBI_MATRIX_COLS] = {
 		{GPIOB, GPIO_Pin_1}}; // C14
 
 static uint8_t key_states[KEYBI_MATRIX_COLS][KEYBI_MATRIX_ROWS] = {0};
+static uint8_t key_states_at[KEYBI_MATRIX_COLS][KEYBI_MATRIX_ROWS] = {0};
 
 void Keybi_Matrix_Init(void) {
 
@@ -55,21 +56,32 @@ void Keybi_Matrix_Init(void) {
 }
 
 void Keybi_Matrix_Scan(int (*callback)(keybi_keyboard_matrix_event_t)) {
+
+	uint16_t time_ms = Keybi_TimeMs() % 255;
+
 	for (uint8_t c = 0; c < KEYBI_MATRIX_COLS; ++c) {
 		GPIO_SetBits(cols[c].port, cols[c].pin);
 		for (uint8_t r = 0; r < KEYBI_MATRIX_ROWS; ++r) {
 			uint8_t state = GPIO_ReadInputDataBit(rows[r].port, rows[r].pin);
 			if (state != key_states[c][r]) {
-				keybi_keyboard_matrix_event_t event = {
-						.col = c,
-						.row = r,
-						.pressed = state,
-						.time = 0
-				};
-				if (callback(event) == 0) {
-					// Save state if callback has been able to handle it
-					key_states[c][r] = state;
+				uint16_t elapsed = time_ms - key_states_at[c][r];
+				if (elapsed < 0) {
+					elapsed += 255;
 				}
+				if (elapsed > DEBOUNCE_DURATION_MS) {
+					keybi_keyboard_matrix_event_t event = {
+							.col = c,
+							.row = r,
+							.pressed = state,
+							.time = 0
+					};
+					if (callback(event) == 0) {
+						// Save state if callback has been able to handle it
+						key_states[c][r] = state;
+					}
+				}
+			} else {
+				key_states_at[c][r] = time_ms;
 			}
 		}
 		GPIO_ResetBits(cols[c].port, cols[c].pin);

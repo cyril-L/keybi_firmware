@@ -8,7 +8,7 @@
 #include "keybi/drivers/pmw3360.h"
 
 #include "stm32f10x_spi.h"
-#include "keybi/drivers/delay.h"
+#include "keybi/drivers/time.h"
 
 // Registers
 #define Product_ID  0x00

@@ -5,6 +5,8 @@
 #define KEYBI_MATRIX_ROWS (5)
 #define KEYBI_MATRIX_COLS (14)
 
+#define DEBOUNCE_DURATION_MS (10)
+
 typedef struct {
     uint8_t col;
     uint8_t row;
