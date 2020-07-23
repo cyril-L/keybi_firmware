@@ -140,7 +140,8 @@ SRC += ../../src/keybi/keybi.c \
        ../../src/keybi/keymap.c \
        ../../src/keybi/drivers/time.c \
        ../../src/keybi/drivers/pmw3360.c \
-       ../../src/keybi/drivers/matrix.c
+       ../../src/keybi/drivers/matrix.c \
+       ../../src/keybi/drivers/ws2812.c
 
 			
 # List C source files here which must be compiled in ARM-Mode.
@@ -163,7 +164,7 @@ CPPSRCARM =
 # Even though the DOS/Win* filesystem matches both .s and .S the same,
 # it will preserve the spelling of the filenames, and gcc itself does
 # care about how the name is spelled on its command-line.
-ASRC = 
+ASRC = ../../src/keybi/drivers/ws2812_asm.S
 
 # List Assembler source files here which must be assembled in ARM-Mode..
 ASRCARM = 
