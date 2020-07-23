@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/keybi/tests/tests",
+            "args": ["--gtest_filter=*Shot*"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "make tests"
+        },
+        {
+            "name": "Firmware",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceRoot}/build/gcc/nitrokey-pro-firmware.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "jlink",
+            "device": "STM32F103RB",
+            "interface": "swd",
+            "preLaunchTask": "make firmware",
+            "runToMain": true
+        }
+    ]
+}
