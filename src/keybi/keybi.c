@@ -3,10 +3,13 @@
 #include "keybi/hid_mouse.h"
 #include "keybi/drivers/pmw3360.h"
 #include "keybi/drivers/matrix.h"
+#include "keybi/drivers/ws2812.h"
 #include "keybi/keymap.h"
+#include <stdlib.h>
 
 void Keybi_Init(void) {
 
+	Keybi_Ws2812_Init();
     Keybi_Pmw3360_Init();
     Keybi_Matrix_Init();
 }
@@ -30,12 +33,16 @@ int32_t scroll_h = 0;
 #define SCROLL_V_SCALE (-MOVE_Y_SCALE / 30.0)
 #define SCROLL_H_SCALE (MOVE_X_SCALE / 30.0)
 
+#define SENSITIVITY (3)
+
 void Keybi_MainLoop(void)
 {
     static keybi_pmw3360_motion_t trackball_motion;
 
     static uint8_t keyboard_hid_report[8] = {0};
     static uint8_t mouse_hid_report[5] = {0};
+
+    Keybi_Keymap_Loop();
 
     Keybi_Matrix_Scan(&Keybi_Keymap_EventHandler);
     while (Keybi_Keyboard_QueueToReport(&keybi_keymap_events, keyboard_hid_report)) {
@@ -45,9 +52,11 @@ void Keybi_MainLoop(void)
     Keybi_Pmw3360_Read(&trackball_motion);
     if (trackball_motion.dx != 0 || trackball_motion.dy != 0) {
     	if (keybi_keyboard_layer != L_MOUSE) {
-    		keybi_keyboard_layer = L_MOUSE;
-    		keybi_mouse_is_scrolling = 0;
+    		if (abs(trackball_motion.dx) + abs(trackball_motion.dy) < SENSITIVITY) {
+    			return;
+    		}
     	}
+    	Keyi_Keymap_SetLayer(L_MOUSE);
     	if (!keybi_mouse_is_scrolling) {
 
         	move_x += trackball_motion.dy;
