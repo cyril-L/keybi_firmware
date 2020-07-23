@@ -1,0 +1,36 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"LSP":
+		{
+			"clangd":
+			{
+				"enabled": true
+			}
+		},
+        "debug.configurations":
+        [
+            {
+                "name": "Tests",
+                "type": "lldb",
+                "request": "launch",
+                "program": "${workspaceFolder}/src/keybi/tests/test"
+            },
+        ]
+	},
+	"build_systems":
+    [
+        {
+            "name": "Make - Tests",
+            "cmd": ["make", "run_tests"],
+            "working_dir": "${project_path}/src/keybi/tests",
+            "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$"
+        }
+    ]
+}
