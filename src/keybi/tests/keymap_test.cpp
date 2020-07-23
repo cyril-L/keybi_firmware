@@ -4,6 +4,9 @@
 extern "C" {
     #include "keybi/keymap.h"
     #include "keybi/qmk/keycode.h"
+
+    uint32_t Keybi_TimeMs(void) {return 0;}
+    void Keybi_Ws2812_Set(unsigned, uint32_t) {}
 }
 
 class Keymap : public ::testing::Test {
@@ -26,6 +29,8 @@ keybi_keyboard_matrix_event_t MakeMatrixEvent(event_to_make_t event) {
         case KC_GRV:       return {0, 0, event.pressed, 0};
         case KC_A:         return {1, 2, event.pressed, 0};
         case CL_FN_SWITCH: return {8, 4, event.pressed, 0};
+        case CL_PARENS:    return {8, 2, event.pressed, 0};
+        case CL_SHIFT:     return {0, 3, event.pressed, 0};
     }
     throw std::invalid_argument("keycode not handled");
 }
@@ -135,4 +140,125 @@ TEST_F(Keymap, HandlesTransparentFnLayerKeysAsHypr) {
         ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
     }
     ASSERT_EQ(L_BASE, keybi_keyboard_layer);
+}
+
+TEST_F(Keymap, HandlesMacros) {
+    keybi_keyboard_layer = L_CODE;
+    event_to_make_t events[] = {
+        {CL_PARENS, 1},
+        {CL_PARENS, 0}
+    };
+    for (int i = 0; i < 2; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_5, 1}, {KC_5, 0},
+        {KC_6, 1}, {KC_6, 0},
+        {KC_LEFT, 1}, {KC_LEFT, 0}
+    };
+    for (unsigned i = 0; i < 6; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
+}
+
+TEST_F(Keymap, HandlesPressedShift) {
+    event_to_make_t events[] = {
+        {CL_SHIFT, 1},
+        {KC_A, 1},
+        {KC_A, 0},
+        {CL_SHIFT, 0}
+    };
+    for (int i = 0; i < 4; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_LSHIFT, 1},
+        {KC_A, 1},
+        {KC_A, 0},
+        {KC_LSHIFT, 0}
+    };
+    for (unsigned i = 0; i < 4; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
+}
+
+TEST_F(Keymap, HandlesRollingShift) {
+    event_to_make_t events[] = {
+        {CL_SHIFT, 1},
+        {KC_A, 1},
+        {CL_SHIFT, 0},
+        {KC_A, 0},
+    };
+    for (int i = 0; i < 4; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_LSHIFT, 1},
+        {KC_A, 1},
+        {KC_LSHIFT, 0},
+        {KC_A, 0},
+    };
+    for (unsigned i = 0; i < 4; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
+}
+
+TEST_F(Keymap, HandlesOneShotShift) {
+    event_to_make_t events[] = {
+        {CL_SHIFT, 1},
+        {CL_SHIFT, 0},
+        {KC_A, 1},
+        {KC_A, 0},
+    };
+    for (int i = 0; i < 4; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_LSHIFT, 1},
+        {KC_A, 1},
+        {KC_LSHIFT, 0},
+        {KC_A, 0},
+    };
+    for (unsigned i = 0; i < 4; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
+}
+
+TEST_F(Keymap, HandlesLockedShift) {
+    event_to_make_t events[] = {
+        {CL_SHIFT, 1},
+        {CL_SHIFT, 0},
+        {CL_SHIFT, 1},
+        {CL_SHIFT, 0},
+        {KC_A, 1},
+        {KC_A, 0},
+        {KC_A, 1},
+        {KC_A, 0},
+        {CL_SHIFT, 1},
+        {CL_SHIFT, 0},
+    };
+    for (int i = 0; i < 10; ++i) {
+        auto matrix_event = MakeMatrixEvent(events[i]);
+        ASSERT_EQ(0, Keybi_Keymap_EventHandler(matrix_event));
+    }
+    keybi_keyboard_event_t expected_events[] = {
+        {KC_LSHIFT, 1},
+        {KC_A, 1},
+        {KC_A, 0},
+        {KC_A, 1},
+        {KC_A, 0},
+        {KC_LSHIFT, 0},
+    };
+    for (unsigned i = 0; i < 6; ++i) {
+        keybi_keyboard_event_t event = GetQueuedElement(i);
+        ASSERT_TRUE(expected_events[i] == event) << i << ": " << event;
+    }
 }

@@ -25,13 +25,17 @@ enum custom_keycodes {
   CL_TOGGLE_CMD_CTRL,
   CL_MOUSE_OUT,
   CL_MOUSE_TOGGLE_SCROLL,
+  CL_SHIFT,
+  CL_ALTGR,
   CL_SAFE_RANGE
 };
 
 int Keybi_Keymap_EventHandler(keybi_keyboard_matrix_event_t event);
+void Keyi_Keymap_SetLayer(layer_id_t new_layer);
+void Keybi_Keymap_Loop(void);
 
 // TODO used from outside for experiments, to refactor
 extern keybi_keyboard_event_queue_t keybi_keymap_events;
-extern int keybi_keyboard_layer;
+extern uint8_t keybi_keyboard_layer;
 extern int keybi_mouse_is_scrolling;
 extern uint8_t keybi_mouse_buttons;
