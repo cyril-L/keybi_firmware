@@ -16,3 +16,8 @@ build/gcc/nitrokey-pro-firmware.lss
 build/gcc/nitrokey-pro-firmware.map
 build/gcc/nitrokey-pro-firmware.hex
 build/gcc/nitrokey-pro-firmware.sym
+
+!/.vscode
+/.vscode/settings.json
+*.sublime-workspace
+/src/keybi/tests/tests
