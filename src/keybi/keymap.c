@@ -86,7 +86,6 @@ keybi_keyboard_event_queue_t keybi_keymap_events = {
 uint8_t keybi_keyboard_layer = L_BASE;
 
 int keybi_mouse_is_scrolling = 0;
-int keybi_mouse_has_clicked = 0;
 uint8_t keybi_mouse_buttons = 0;
 
 uint32_t unset_mouse_layer_at = 0;
@@ -102,13 +101,8 @@ void Keyi_Keymap_SetLayer(layer_id_t new_layer) {
         // Set mouse move mode when entering mouse layer
         if (keybi_keyboard_layer != L_MOUSE) {
             keybi_mouse_is_scrolling = 0;
-            keybi_mouse_has_clicked = 0;
         }
-        if (!keybi_mouse_has_clicked) {
-            unset_mouse_layer_at = Keybi_TimeMs() + 3000;
-        } else {
-            unset_mouse_layer_at = Keybi_TimeMs() + 300;
-        }
+        unset_mouse_layer_at = Keybi_TimeMs() + 3000;
     }
     keybi_keyboard_layer = new_layer;
 }
@@ -357,7 +351,6 @@ static int handle_mouse_buttons(keybi_keyboard_matrix_event_t matrix_event, uint
     }
 
     if (matrix_event.pressed && (*keycode == KC_BTN1 || *keycode == KC_BTN2 || *keycode == KC_BTN3)) {
-        keybi_mouse_has_clicked = 1;
         unset_mouse_layer_at = Keybi_TimeMs() + 300;
     }
 
