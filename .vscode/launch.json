@@ -25,7 +25,7 @@
             "preLaunchTask": "make tests"
         },
         {
-            "name": "Firmware",
+            "name": "J-Link Debug",
             "cwd": "${workspaceRoot}",
             "executable": "${workspaceRoot}/build/gcc/nitrokey-pro-firmware.elf",
             "request": "launch",
@@ -33,6 +33,17 @@
             "servertype": "jlink",
             "device": "STM32F103RB",
             "interface": "swd",
+            "preLaunchTask": "make firmware",
+            "runToMain": true
+        },
+        {
+            "name": "BMP Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceRoot}/build/gcc/nitrokey-pro-firmware.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "bmp",
+            "BMPGDBSerialPort": "/dev/serial/by-id/usb-Black_Sphere_Technologies_Black_Magic_Probe_D5DDAEF5-if00",
             "preLaunchTask": "make firmware",
             "runToMain": true
         }
