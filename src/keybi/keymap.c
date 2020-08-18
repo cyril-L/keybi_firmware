@@ -68,7 +68,7 @@ const uint16_t keymaps[][KEYBI_MATRIX_ROWS][KEYBI_MATRIX_COLS] = {
   [L_MOUSE] = LAYOUT( /* Mouse mode */
   ____, ____, ____, ____, ____, ____, CL_MOUSE_OUT, ____, ____, ____, ____, ____, ____, ____, ____, \
   ____, ____, ____, ____, ____, ____, ____, ____, ____, ____, ____, ____, ____, ____, \
-  CL_MOUSE_OUT, ____, KC_BTN2, KC_BTN3, KC_BTN1, ____, ____, KC_BTN1, KC_BTN3, KC_BTN2, ____, ____, ____, \
+  CL_MOUSE_OUT, ____, KC_BTN2, KC_BTN3, KC_BTN1, CL_MOUSE_OUT, CL_MOUSE_OUT, KC_BTN1, KC_BTN3, KC_BTN2, ____, ____, ____, \
   ____, ____, ____, ____, ____, CL_MOUSE_OUT, KC_BTN2, CL_MOUSE_OUT, ____, ____, ____, ____, ____, ____, \
   ____, ____, ____, CL_MOUSE_TOGGLE_SCROLL, KC_BTN1, KC_BTN3, KC_BTN1, CL_MOUSE_TOGGLE_SCROLL, ____, ____, ____ \
   ),
@@ -245,8 +245,9 @@ static int handle_mouse_layer(keybi_keyboard_matrix_event_t matrix_event, uint16
     if (*keycode == ____) {
         if (matrix_event.pressed) {
             keybi_keyboard_layer = L_BASE;
+            *keycode = handle_layers(matrix_event);
         }
-        return BREAK;
+        return CONTINUE;
     }
 
     return CONTINUE;
